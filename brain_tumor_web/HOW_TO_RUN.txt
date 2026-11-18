@@ -1,0 +1,33 @@
+HOW TO RUN THE WEB APP (Windows, inside your venv)
+====================================================
+
+Project folder:  D:\chethan\Projects\Brain Tumor Detection
+Keep these files and folders together in that folder:
+  model_best.pt                (your trained model - already there)
+  train_brain_tumor.py, predict.py, gradcam.py, make_charts.py, app.py
+  reference_600_epochs.json, history_ours.json
+  templates\   (index.html, charts.html)
+  static\      (created automatically)
+
+1. Open Command Prompt in the project folder and activate the venv:
+     cd /d "D:\chethan\Projects\Brain Tumor Detection"
+     venv\Scripts\activate
+
+2. Install Flask (once):
+     pip install flask
+
+3. Create the charts (once, takes a few minutes; it runs the model on the test set):
+     python make_charts.py --data_dir "D:\chethan\Projects\Brain Tumor Detection\Epic and CSCR hospital Dataset"
+
+4. Start the web app:
+     python app.py
+
+5. Open in your browser:
+     http://127.0.0.1:5000
+   Charts page:  http://127.0.0.1:5000/charts
+   Stop the app: press Ctrl+C in Command Prompt.
+
+Notes
+- The first scan takes a few seconds while the model loads.
+- Uploaded scans are deleted right after the result is shown.
+- Research prototype only. Not for diagnosis.

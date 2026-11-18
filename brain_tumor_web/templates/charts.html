@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model charts</title>
+<style>
+  :root { --bg:#f5f7fb; --card:#ffffff; --text:#1d2433; --muted:#6b7385; --accent:#2563eb; --border:#e3e7ef; --warn:#b45309; --warnbg:#fff7e6; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0f1420; --card:#171e2e; --text:#e6e9f2; --muted:#9aa3b8; --accent:#60a5fa; --border:#2a3347; --warn:#fbbf24; --warnbg:#2a2213; }
+  }
+  :root[data-theme="dark"] { --bg:#0f1420; --card:#171e2e; --text:#e6e9f2; --muted:#9aa3b8; --accent:#60a5fa; --border:#2a3347; --warn:#fbbf24; --warnbg:#2a2213; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header, main { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  h1 { font-size:1.5rem; margin:0; }
+  h2 { font-size:1.15rem; margin: 28px 0 8px; }
+  a.nav { color: var(--accent); text-decoration:none; font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-top:12px; }
+  .notice { background:var(--warnbg); color:var(--warn); border-radius:10px; padding:12px 14px; margin-top:16px; font-size:0.95rem; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  img { max-width:100%; border-radius:8px; border:1px solid var(--border); background:#fff; }
+  .caption { font-size:0.9rem; color:var(--muted); margin-top:6px; }
+  table { width:100%; border-collapse: collapse; font-size: 0.95rem; }
+  th, td { padding:8px; border-bottom:1px solid var(--border); text-align:left; }
+  td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; }
+  .muted { color:var(--muted); font-size:0.92rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Model charts and results</h1>
+  <a class="nav" href="/">&larr; Back to classifier</a>
+</header>
+<main>
+  <div class="notice">{{ limits }}</div>
+
+  <h2>Test results (2,414 scans never used for training)</h2>
+  <div class="card">
+    {% if metrics %}
+    <p><strong>Test accuracy: {{ "%.1f"|format(metrics.test_accuracy * 100) }}%</strong></p>
+    <table>
+      <thead><tr><th>Class</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">Scans</th></tr></thead>
+      <tbody>
+      {% for name, m in metrics.per_class.items() %}
+        <tr><td>{{ name }}</td><td class="num">{{ "%.3f"|format(m.precision) }}</td><td class="num">{{ "%.3f"|format(m.recall) }}</td><td class="num">{{ "%.3f"|format(m['f1-score']) }}</td><td class="num">{{ m.support }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">Precision: of the scans called this class, how many were right. Recall: of the real scans of this class, how many were found.</p>
+    {% else %}
+    <p class="muted">Charts have not been generated yet. Run <code>python make_charts.py --data_dir "..."</code> first.</p>
+    {% endif %}
+  </div>
+
+  <h2>Charts</h2>
+  {% if charts %}
+  <div class="grid">
+    {% for file, title in charts %}
+    <div class="card">
+      <img src="/static/charts/{{ file }}" alt="{{ title }}">
+      <div class="caption">{{ title }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card muted">No charts yet. Run <code>python make_charts.py</code> to create them.</div>
+  {% endif %}
+
+  <h2>About the model</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Model:</strong> EfficientNet-B0, pretrained on ImageNet and fine-tuned on MRI scans.</li>
+      <li><strong>Dataset:</strong> Epic and CSCR hospital dataset, 12,064 T1 contrast-enhanced MRI scans in four classes.</li>
+      <li><strong>Image size:</strong> every scan is resized to 224 x 224 pixels before the model sees it.</li>
+      <li><strong>Fixes against overfitting:</strong> early stopping, augmentation (flips, brightness and shifts), dropout, weight decay, and class weights.</li>
+      <li><strong>Limits:</strong> the same patient may appear in more than one split, which can make scores look better than they are. Results on scans from other sources may be worse.</li>
+    </ul>
+    <p class="muted">{{ disclaimer }}</p>
+  </div>
+</main>
+</body>
+</html>

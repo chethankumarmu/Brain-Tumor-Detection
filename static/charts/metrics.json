@@ -1,0 +1,44 @@
+{
+ "test_accuracy": 0.9859154929577465,
+ "per_class": {
+  "Glioma": {
+   "precision": 0.996,
+   "recall": 0.966,
+   "f1-score": 0.98,
+   "support": 755.0
+  },
+  "Meningioma": {
+   "precision": 0.961,
+   "recall": 0.987,
+   "f1-score": 0.974,
+   "support": 546.0
+  },
+  "No Tumor": {
+   "precision": 0.99,
+   "recall": 1.0,
+   "f1-score": 0.995,
+   "support": 487.0
+  },
+  "Pituitary": {
+   "precision": 0.994,
+   "recall": 0.998,
+   "f1-score": 0.996,
+   "support": 626.0
+  }
+ },
+ "split_counts": {
+  "Train": {
+   "Glioma": 3018,
+   "Meningioma": 2183,
+   "No Tumor": 1945,
+   "Pituitary": 2504
+  },
+  "Test": {
+   "Glioma": 755,
+   "Meningioma": 546,
+   "No Tumor": 487,
+   "Pituitary": 626
+  }
+ },
+ "train_accuracy": 0.9986528497409326
+}

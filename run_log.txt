@@ -1,0 +1,39 @@
+Device: cuda
+GPU: NVIDIA GeForce RTX 3050 6GB Laptop GPU
+Classes: ['glioma', 'meningioma', 'notumor', 'pituitary']
+Train: 8202  Validation: 1448  Test: 2414
+Training images per class: {'glioma': 2565, 'meningioma': 1856, 'notumor': 1653, 'pituitary': 2128}
+Traceback (most recent call last):
+  File "D:\chethan\Projects\Brain Tumor Detection\train_brain_tumor.py", line 215, in <module>
+    main()
+  File "D:\chethan\Projects\Brain Tumor Detection\train_brain_tumor.py", line 138, in main
+    for images, labels_batch in train_loader:
+  File "D:\chethan\Projects\Brain Tumor Detection\venv\Lib\site-packages\torch\utils\data\dataloader.py", line 725, in __next__
+    data = self._next_data()
+           ^^^^^^^^^^^^^^^^^
+  File "D:\chethan\Projects\Brain Tumor Detection\venv\Lib\site-packages\torch\utils\data\dataloader.py", line 1507, in _next_data
+    idx, data = self._get_data()
+                ^^^^^^^^^^^^^^^^
+  File "D:\chethan\Projects\Brain Tumor Detection\venv\Lib\site-packages\torch\utils\data\dataloader.py", line 1466, in _get_data
+    success, data = self._try_get_data()
+                    ^^^^^^^^^^^^^^^^^^^^
+  File "D:\chethan\Projects\Brain Tumor Detection\venv\Lib\site-packages\torch\utils\data\dataloader.py", line 1293, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\multiprocessing\queues.py", line 113, in get
+    if not self._poll(timeout):
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\multiprocessing\connection.py", line 257, in poll
+    return self._poll(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\multiprocessing\connection.py", line 346, in _poll
+    return bool(wait([self], timeout))
+                ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\multiprocessing\connection.py", line 1084, in wait
+    ready_handles = _exhaustive_wait(waithandle_to_obj.keys(), timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python312\Lib\multiprocessing\connection.py", line 1016, in _exhaustive_wait
+    res = _winapi.WaitForMultipleObjects(L, False, timeout)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+^C

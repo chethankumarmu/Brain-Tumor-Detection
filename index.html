@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain MRI Classifier</title>
+<style>
+  :root { --bg:#f5f7fb; --card:#ffffff; --text:#0f172a; --muted:#64748b; --accent:#2563eb; --accent-soft:#eff6ff;
+          --warn:#92400e; --warnbg:#fffbeb; --warnborder:#fde68a; --border:#e2e8f0; --track:#e2e8f0; --side:#ffffff; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0f1420; --card:#171e2e; --text:#e6e9f2; --muted:#9aa3b8; --accent:#60a5fa; --accent-soft:#1e2a44; --warn:#fbbf24; --warnbg:#2a2213; --warnborder:#5c4a1a; --border:#2a3347; --track:#2a3347; --side:#131a28; }
+  }
+  :root[data-theme="dark"] { --bg:#0f1420; --card:#171e2e; --text:#e6e9f2; --muted:#9aa3b8; --accent:#60a5fa; --accent-soft:#1e2a44; --warn:#fbbf24; --warnbg:#2a2213; --warnborder:#5c4a1a; --border:#2a3347; --track:#2a3347; --side:#131a28; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; min-height:100vh; }
+  .shell { display:flex; min-height:100vh; }
+  aside { width:232px; flex-shrink:0; background:var(--side); border-right:1px solid var(--border); padding:28px 16px; display:flex; flex-direction:column; gap:28px; }
+  .brand { display:flex; align-items:center; gap:12px; padding:0 8px; }
+  .logo { width:36px; height:36px; border-radius:10px; background:var(--accent); }
+  .brand-name { font-size:16px; font-weight:700; line-height:1.2; }
+  .brand-sub { font-size:13px; color:var(--muted); }
+  nav { display:flex; flex-direction:column; gap:6px; }
+  .tab { font:inherit; font-size:15px; font-weight:500; text-align:left; background:transparent; color:#475569; border-radius:10px; padding:11px 14px; min-height:44px; cursor:pointer; border:0; }
+  :root[data-theme="dark"] .tab, :root:not([data-theme="light"]) .tab { color:var(--muted); }
+  .tab.active { background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  .aside-note { margin-top:auto; font-size:12px; line-height:1.5; color:var(--muted); padding:0 8px; }
+  main { flex:1; min-width:0; padding:32px 40px; display:flex; flex-direction:column; gap:24px; }
+  .page { display:none; flex-direction:column; gap:24px; }
+  .page.active { display:flex; }
+  h1 { margin:0; font-size:28px; font-weight:700; }
+  h2 { margin:0; font-size:20px; font-weight:600; }
+  .lead { margin:8px 0 0; font-size:15px; color:var(--muted); }
+  .notice { display:flex; gap:12px; align-items:flex-start; background:var(--warnbg); border:1px solid var(--warnborder); color:var(--warn); border-radius:12px; padding:14px 18px; font-size:14px; line-height:1.5; }
+  .notice strong { white-space:nowrap; font-weight:600; }
+  .two { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:24px; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .muted { color:var(--muted); font-size:14px; line-height:1.5; margin:0; }
+  .drop { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; border:2px dashed var(--border); border-radius:14px; background:var(--bg); padding:48px 24px; text-align:center; }
+  .btn { font:inherit; font-size:15px; font-weight:600; color:#fff; background:var(--accent); border:0; border-radius:10px; padding:12px 22px; cursor:pointer; min-height:44px; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .btn.ghost { color:var(--accent); background:var(--accent-soft); padding:8px 12px; min-height:40px; font-size:14px; }
+  input[type=file] { font:inherit; font-size:14px; color:var(--text); max-width:100%; }
+  .result-head { display:flex; align-items:center; justify-content:space-between; }
+  .eyebrow { font-size:13px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
+  .best { font-size:30px; font-weight:700; }
+  .bar-row { display:grid; grid-template-columns:120px 1fr 56px; align-items:center; gap:12px; font-size:14px; }
+  .bar-label { font-weight:600; }
+  .bar-track { height:10px; background:var(--track); border-radius:999px; overflow:hidden; }
+  .bar-fill { height:100%; background:#94a3b8; }
+  .bar-fill.top { background:var(--accent); }
+  .bar-val { text-align:right; font-variant-numeric:tabular-nums; }
+  .warn-item { font-size:14px; line-height:1.5; color:var(--warn); background:var(--warnbg); border-radius:10px; padding:12px 14px; }
+  .figure { margin:0; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; }
+  .figure .ph { height:320px; border-radius:10px; background:var(--track); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px; overflow:hidden; }
+  .figure img { width:100%; height:320px; object-fit:contain; border-radius:10px; border:0; background:#000; }
+  .figure figcaption { margin-top:10px; font-size:14px; color:var(--muted); }
+  footer.meta { font-size:13px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px 20px; }
+  .hidden { display:none !important; }
+  .error { color:#dc2626; font-size:14px; }
+  /* charts */
+  .figs-note { font-size:14px; color:var(--muted); }
+  .acc { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .acc .big { font-size:40px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .acc .label { font-size:15px; color:var(--muted); }
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:15px; font-variant-numeric:tabular-nums; }
+  th, td { padding:12px; text-align:right; border-bottom:1px solid var(--border); }
+  th:first-child, td:first-child { text-align:left; }
+  th { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:600; padding-top:10px; padding-bottom:10px; }
+  td:first-child { font-weight:600; }
+  tr:last-child td { border-bottom:0; }
+  .chart-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:24px; }
+  .tilt { display:block; width:100%; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px; font:inherit; color:inherit; text-align:left; cursor:zoom-in; transform-style:preserve-3d; transition:transform .3s ease, box-shadow .3s ease; }
+  .tilt:hover, .tilt:focus-visible { transform:perspective(1000px) rotateX(4deg) rotateY(-4deg) translateY(-4px); box-shadow:0 20px 40px rgba(15,23,42,.18); }
+  .tilt .thumb { display:block; width:100%; height:260px; object-fit:contain; border-radius:10px; background:#fff; border:0; }
+  .tilt .cap { display:block; margin-top:10px; font-size:14px; color:var(--muted); line-height:1.5; }
+  .tilt .cap strong { display:block; color:var(--text); font-size:15px; margin-bottom:2px; }
+  .loss-toggle { border:1px dashed var(--border); background:var(--card); border-radius:16px; padding:20px; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; gap:12px; min-height:320px; }
+  .limits { background:var(--warnbg); border:1px solid var(--warnborder); color:var(--warn); border-radius:12px; padding:14px 18px; font-size:14px; line-height:1.5; }
+  /* zoom */
+  .zoom { position:fixed; inset:0; z-index:50; background:rgba(15,23,42,.72); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .zoom-box { background:var(--card); border-radius:16px; width:min(1000px,100%); max-height:100%; overflow:auto; padding:24px; display:flex; flex-direction:column; gap:16px; }
+  .zoom-head { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  .zoom-head h3 { margin:0; font-size:18px; font-weight:600; }
+  .zoom img { width:100%; height:auto; border-radius:12px; background:#fff; }
+  @media (max-width: 900px) {
+    .shell { flex-direction:column; }
+    aside { width:auto; flex-direction:row; flex-wrap:wrap; align-items:center; padding:16px; gap:12px; }
+    .aside-note { display:none; }
+    nav { flex-direction:row; }
+    main { padding:24px 16px; }
+    .two, .chart-grid { grid-template-columns:1fr; }
+    .bar-row { grid-template-columns:96px 1fr 52px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tilt { transition:none; } .tilt:hover, .tilt:focus-visible { transform:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="brand-name">Brain MRI</div>
+        <div class="brand-sub">Classifier</div>
+      </div>
+    </div>
+    <nav>
+      <button class="tab" data-tab="scan">Classify scan</button>
+      <button class="tab" data-tab="charts">Model charts</button>
+    </nav>
+    <div class="aside-note">Research prototype. Not a medical diagnosis.</div>
+  </aside>
+
+  <main>
+
+    <!-- ============ Classify scan ============ -->
+    <section class="page" id="page-scan">
+      <div>
+        <h1>Classify an MRI scan</h1>
+        <p class="lead">Find out which of four classes a brain MRI most resembles.</p>
+      </div>
+
+      <div class="notice"><strong>Research use only.</strong><span>{{ disclaimer }} {{ limits }}</span></div>
+
+      <div class="two">
+        <section class="panel">
+          <h2>Upload an MRI scan</h2>
+          <p class="muted">JPG, PNG, BMP or TIFF. The scan is processed and deleted right after the result.</p>
+          <form id="upload-form" class="drop">
+            <div style="font-size:16px; font-weight:600">Choose a scan</div>
+            <input type="file" id="scan" name="scan" accept=".jpg,.jpeg,.png,.bmp,.tif,.tiff" required>
+            <button class="btn" type="submit" id="submit-btn">Classify scan</button>
+          </form>
+          <div id="spinner" class="muted hidden">Classifying... (the first scan can take a few seconds while the model loads)</div>
+          <div id="error" class="error hidden"></div>
+        </section>
+
+        <section class="panel" id="result-panel">
+          <div class="result-head">
+            <div class="eyebrow">Result</div>
+            <div id="result-tag" class="muted hidden" style="background:var(--track); border-radius:999px; padding:4px 10px">Waiting for a scan</div>
+          </div>
+          <div id="best" class="best hidden"></div>
+          <div id="bars"><p class="muted">Upload a scan to see the four class probabilities here.</p></div>
+          <div id="warnings"></div>
+        </section>
+      </div>
+
+      <div class="two">
+        <figure class="figure">
+          <div class="ph" id="scan-ph">Your scan appears here</div>
+          <img id="scan-img" alt="Uploaded scan" class="hidden">
+          <figcaption>Your scan</figcaption>
+        </figure>
+        <figure class="figure">
+          <div class="ph" id="gradcam-ph" style="background:#0f172a; color:#94a3b8">Heatmap appears here</div>
+          <img id="gradcam-img" alt="Grad-CAM heatmap" class="hidden">
+          <figcaption>Where the model looked (red = most attention). This shows where the model looked, not a diagnosis.</figcaption>
+        </figure>
+      </div>
+
+      <footer class="meta">
+        <span>EfficientNet-B0, fine-tuned</span>
+        {% if metrics %}<span>Test accuracy {{ "%.1f"|format(metrics.test_accuracy * 100) }}%</span>{% endif %}
+      </footer>
+    </section>
+
+    <!-- ============ Model charts ============ -->
+    <section class="page" id="page-charts">
+      <div>
+        <h1>Model charts and results</h1>
+        <p class="lead">{% if metrics %}Scored on {{ metrics.per_class.values()|map(attribute='support')|sum|int }} test scans that the model never saw during training.{% else %}Charts not generated yet.{% endif %} Click any chart to view it full size.</p>
+      </div>
+
+      {% if metrics %}
+      <section class="panel">
+        <div class="acc">
+          <div class="big">{{ "%.1f"|format(metrics.test_accuracy * 100) }}%</div>
+          <div class="label">overall test accuracy</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Scans</th></tr></thead>
+            <tbody>
+            {% for name, m in metrics.per_class.items() %}
+              <tr><td>{{ name }}</td><td>{{ "%.3f"|format(m.precision) }}</td><td>{{ "%.3f"|format(m.recall) }}</td><td>{{ "%.3f"|format(m['f1-score']) }}</td><td>{{ m.support }}</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Precision: of the scans called this class, how many were right. Recall: of the real scans of this class, how many were found.</p>
+      </section>
+      {% endif %}
+
+      <div class="limits"><strong>Known limits.</strong> Glioma and meningioma are the two classes the model confuses most. Scores may be optimistic if the same patient appears in both training and test data, and results on scans from other sources can be worse.</div>
+
+      <div class="chart-grid">
+        {% for c in charts %}
+          {% if c.file == 'loss_before_after.png' %}
+          <div class="loss-toggle" id="loss-hidden">
+            <div style="font-size:15px; font-weight:600">Loss curves: before and after</div>
+            <div class="muted">Hidden. Show the training curves for the 600-epoch reference run and for our run.</div>
+            <button class="btn" type="button" id="loss-show">Show loss curves</button>
+          </div>
+          <div class="tilt-wrap hidden" id="loss-shown" style="display:contents">
+            <button class="tilt" type="button" data-zoom="{{ c.file }}" data-title="{{ c.title }}">
+              <img class="thumb" src="/static/charts/{{ c.file }}" alt="{{ c.title }}">
+              <span class="cap"><strong>{{ c.title }}</strong>{{ c.caption }}</span>
+            </button>
+          </div>
+          {% else %}
+          <button class="tilt" type="button" data-zoom="{{ c.file }}" data-title="{{ c.title }}">
+            <img class="thumb" src="/static/charts/{{ c.file }}" alt="{{ c.title }}">
+            <span class="cap"><strong>{{ c.title }}</strong>{{ c.caption }}</span>
+          </button>
+          {% endif %}
+        {% else %}
+          <div class="panel muted">No charts yet. Run <code>python make_charts.py --data_dir "..."</code> first.</div>
+        {% endfor %}
+      </div>
+
+      <section class="panel">
+        <h2>About the model</h2>
+        <ul class="muted" style="margin:0; padding-left:20px; line-height:1.7">
+          <li><strong>Model:</strong> EfficientNet-B0, pretrained on ImageNet and fine-tuned on MRI scans.</li>
+          <li><strong>Dataset:</strong> Epic and CSCR hospital dataset, 12,064 MRI scans in four classes (train and test folders).</li>
+          <li><strong>Image size:</strong> every scan is resized to 224 x 224 pixels before the model sees it.</li>
+          <li><strong>Fixes against overfitting:</strong> early stopping, augmentation (flips, rotation, brightness), dropout, weight decay, and class weights.</li>
+          <li><strong>Limits:</strong> the same patient may appear in more than one split, which can make scores look better than they are.</li>
+        </ul>
+      </section>
+    </section>
+
+  </main>
+</div>
+
+<!-- zoom pop-up -->
+<div class="zoom hidden" id="zoom" role="dialog" aria-modal="true">
+  <div class="zoom-box">
+    <div class="zoom-head">
+      <h3 id="zoom-title"></h3>
+      <button class="btn ghost" type="button" id="zoom-close">Close</button>
+    </div>
+    <img id="zoom-img" alt="">
+  </div>
+</div>
+
+<script>
+  // ---- tabs (sidebar) ----
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.getElementById('page-scan').classList.toggle('active', name === 'scan');
+    document.getElementById('page-charts').classList.toggle('active', name === 'charts');
+    history.replaceState(null, '', name === 'charts' ? '/?tab=charts' : '/');
+  }
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  showTab(new URLSearchParams(location.search).get('tab') === 'charts' ? 'charts' : 'scan');
+
+  // ---- loss curves: hidden until the button is pressed ----
+  const lossShow = document.getElementById('loss-show');
+  if (lossShow) lossShow.addEventListener('click', () => {
+    document.getElementById('loss-hidden').classList.add('hidden');
+    document.getElementById('loss-shown').classList.remove('hidden');
+  });
+
+  // ---- zoom pop-up for charts ----
+  const zoom = document.getElementById('zoom');
+  function openZoom(file, title) {
+    document.getElementById('zoom-img').src = '/static/charts/' + file;
+    document.getElementById('zoom-img').alt = title;
+    document.getElementById('zoom-title').textContent = title;
+    zoom.classList.remove('hidden');
+  }
+  function closeZoom() { zoom.classList.add('hidden'); document.getElementById('zoom-img').src = ''; }
+  document.querySelectorAll('[data-zoom]').forEach(b => b.addEventListener('click', () => openZoom(b.dataset.zoom, b.dataset.title)));
+  document.getElementById('zoom-close').addEventListener('click', closeZoom);
+  zoom.addEventListener('click', e => { if (e.target === zoom) closeZoom(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeZoom(); });
+
+  // ---- classify ----
+  const form = document.getElementById('upload-form');
+  const spinner = document.getElementById('spinner');
+  const errorBox = document.getElementById('error');
+  const btn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    btn.disabled = true;
+    try {
+      const resp = await fetch('/predict', { method: 'POST', body: new FormData(form) });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Something went wrong.');
+      showResults(json);
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.classList.remove('hidden');
+    } finally {
+      spinner.classList.add('hidden');
+      btn.disabled = false;
+    }
+  });
+
+  function showResults(r) {
+    const best = document.getElementById('best');
+    best.textContent = r.best;
+    best.classList.remove('hidden');
+    document.getElementById('result-tag').classList.add('hidden');
+    const bars = document.getElementById('bars');
+    bars.innerHTML = '';
+    const entries = Object.entries(r.probabilities).sort((a, b) => b[1] - a[1]);
+    entries.forEach(([name, p], i) => {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `<div class="bar-label"></div>
+        <div class="bar-track"><div class="bar-fill ${i === 0 ? 'top' : ''}" style="width:${(p * 100).toFixed(1)}%"></div></div>
+        <div class="bar-val">${(p * 100).toFixed(1)}%</div>`;
+      row.querySelector('.bar-label').textContent = name;
+      bars.appendChild(row);
+    });
+    const warnBox = document.getElementById('warnings');
+    warnBox.innerHTML = '';
+    (r.warnings || []).forEach(w => {
+      const d = document.createElement('div');
+      d.className = 'warn-item';
+      d.style.marginTop = '8px';
+      d.textContent = w;
+      warnBox.appendChild(d);
+    });
+    const scan = document.getElementById('scan-img');
+    scan.src = 'data:image/png;base64,' + r.scan_png; scan.classList.remove('hidden');
+    document.getElementById('scan-ph').classList.add('hidden');
+    const cam = document.getElementById('gradcam-img');
+    cam.src = 'data:image/png;base64,' + r.gradcam_png; cam.classList.remove('hidden');
+    document.getElementById('gradcam-ph').classList.add('hidden');
+  }
+</script>
+</body>
+</html>

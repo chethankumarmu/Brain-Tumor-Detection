@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain MRI Classifier</title>
+<style>
+  :root { --bg:#f5f7fb; --card:#ffffff; --text:#1d2433; --muted:#6b7385; --accent:#2563eb; --warn:#b45309; --warnbg:#fff7e6; --border:#e3e7ef; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0f1420; --card:#171e2e; --text:#e6e9f2; --muted:#9aa3b8; --accent:#60a5fa; --warn:#fbbf24; --warnbg:#2a2213; --border:#2a3347; }
+  }
+  :root[data-theme="dark"] { --bg:#0f1420; --card:#171e2e; --text:#e6e9f2; --muted:#9aa3b8; --accent:#60a5fa; --warn:#fbbf24; --warnbg:#2a2213; --border:#2a3347; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header, main { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  header { padding-top: 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  h1 { font-size: 1.5rem; margin: 0; }
+  a.nav { color: var(--accent); text-decoration:none; font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; margin-top:16px; }
+  .disclaimer { background:var(--warnbg); color:var(--warn); border-radius:10px; padding:12px 14px; margin-top:16px; font-size:0.95rem; }
+  form { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  input[type=file] { flex:1; min-width:200px; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 18px; font-size:1rem; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:16px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  img { max-width:100%; border-radius:8px; border:1px solid var(--border); }
+  .bar-row { display:flex; align-items:center; gap:10px; margin:8px 0; }
+  .bar-label { width:120px; font-weight:600; }
+  .bar-track { flex:1; background:var(--border); border-radius:6px; height:16px; overflow:hidden; }
+  .bar-fill { height:100%; background:var(--accent); }
+  .bar-fill.top { background:#16a34a; }
+  .bar-val { width:60px; text-align:right; font-variant-numeric: tabular-nums; }
+  .best { font-size:1.3rem; font-weight:700; margin-bottom:8px; }
+  .warn-item { background:var(--warnbg); color:var(--warn); border-radius:8px; padding:8px 12px; margin-top:8px; font-size:0.95rem; }
+  .muted { color:var(--muted); font-size:0.92rem; }
+  .hidden { display:none; }
+  .error { color:#dc2626; margin-top:12px; }
+  .spinner { color: var(--muted); margin-top: 12px; }
+  .caption { font-size:0.85rem; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Brain MRI Classifier</h1>
+  <a class="nav" href="/charts">Model charts and results &rarr;</a>
+</header>
+<main>
+  <div class="disclaimer"><strong>Important:</strong> {{ disclaimer }} {{ limits }}</div>
+
+  <section class="card">
+    <form id="upload-form">
+      <input type="file" id="scan" name="scan" accept=".jpg,.jpeg,.png,.bmp,.tif,.tiff" required>
+      <button type="submit" id="submit-btn">Classify scan</button>
+    </form>
+    <div id="spinner" class="spinner hidden">Classifying... (the first scan can take a few seconds while the model loads)</div>
+    <div id="error" class="error hidden"></div>
+  </section>
+
+  <section id="results" class="hidden">
+    <div class="grid">
+      <div class="card">
+        <div id="best" class="best"></div>
+        <div id="bars"></div>
+        <div id="warnings"></div>
+      </div>
+      <div class="card">
+        <div class="grid" style="margin-top:0">
+          <div><img id="scan-img" alt="Uploaded scan"><div class="caption">Your scan</div></div>
+          <div><img id="gradcam-img" alt="Grad-CAM heatmap"><div class="caption">Where the model looked (red = most attention)</div></div>
+        </div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:12px" id="disclaimer-text"></p>
+  </section>
+</main>
+
+<script>
+  const form = document.getElementById('upload-form');
+  const spinner = document.getElementById('spinner');
+  const errorBox = document.getElementById('error');
+  const results = document.getElementById('results');
+  const btn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.classList.add('hidden');
+    results.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    btn.disabled = true;
+    try {
+      const data = new FormData(form);
+      const resp = await fetch('/predict', { method: 'POST', body: data });
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.error || 'Something went wrong.');
+      showResults(json);
+    } catch (err) {
+      errorBox.textContent = err.message;
+      errorBox.classList.remove('hidden');
+    } finally {
+      spinner.classList.add('hidden');
+      btn.disabled = false;
+    }
+  });
+
+  function showResults(r) {
+    document.getElementById('best').textContent = 'Most likely: ' + r.best;
+    const bars = document.getElementById('bars');
+    bars.innerHTML = '';
+    const entries = Object.entries(r.probabilities).sort((a, b) => b[1] - a[1]);
+    entries.forEach(([name, p], i) => {
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `<div class="bar-label">${name}</div>
+        <div class="bar-track"><div class="bar-fill ${i === 0 ? 'top' : ''}" style="width:${(p * 100).toFixed(1)}%"></div></div>
+        <div class="bar-val">${(p * 100).toFixed(1)}%</div>`;
+      bars.appendChild(row);
+    });
+    const warnBox = document.getElementById('warnings');
+    warnBox.innerHTML = '';
+    (r.warnings || []).forEach(w => {
+      const d = document.createElement('div');
+      d.className = 'warn-item';
+      d.textContent = w;
+      warnBox.appendChild(d);
+    });
+    document.getElementById('scan-img').src = 'data:image/png;base64,' + r.scan_png;
+    document.getElementById('gradcam-img').src = 'data:image/png;base64,' + r.gradcam_png;
+    document.getElementById('disclaimer-text').textContent = r.disclaimer;
+    results.classList.remove('hidden');
+  }
+</script>
+</body>
+</html>

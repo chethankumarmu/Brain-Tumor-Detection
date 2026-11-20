@@ -27,7 +27,7 @@ CHARTS = [
     ("confusion_matrix.png", "Confusion matrix, test set", "Test set: scans the model never saw in training."),
     ("confusion_matrix_train.png", "Confusion matrix, training set",
      "For comparison only, not a fair score."),
-    ("split_3d.png", "Scans per class: train and test (3D bars)", None),
+    ("split_counts.png", "Scans per class: train and test", None),
     ("per_image_probability.png", "Probability of the correct class, every test scan",
      "Each dot is one test scan. Dots near the top are confident and correct."),
     ("feature_maps_early.png", "Feature maps: early layer", "Simple patterns such as edges and brightness."),
@@ -55,7 +55,9 @@ def index():
             caption = (f"Scans per class: train {sum(sc['Train'].values()):,}, "
                        f"test {sum(sc['Test'].values()):,}")
         charts.append({"file": file, "title": title, "caption": caption or ""})
-    return render_template("index.html", metrics=metrics, charts=charts, limits=LIMITS, disclaimer=DISCLAIMER)
+    test_total = sum(metrics["split_counts"]["Test"].values()) if "split_counts" in metrics else None
+    return render_template("index.html", metrics=metrics, charts=charts, test_total=test_total,
+                           limits=LIMITS, disclaimer=DISCLAIMER)
 
 
 @app.route("/charts")

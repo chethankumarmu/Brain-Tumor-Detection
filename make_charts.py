@@ -145,23 +145,17 @@ def main():
     counts = {"Train": np.bincount(train_labels, minlength=len(names_in_test)),
               "Test": np.bincount(y_true, minlength=len(names_in_test))}
     metrics["split_counts"] = {k: {n: int(v[i]) for i, n in enumerate(names_in_test)} for k, v in counts.items()}
-    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401  (registers the 3D projection)
-    fig = plt.figure(figsize=(11, 7))
-    ax = fig.add_subplot(111, projection="3d")
-    bar_colors = ["#2563eb", "#f59e0b"]
-    for row, (label, vals) in enumerate(counts.items()):
-        xs = np.arange(len(names_in_test))
-        ys = np.full(len(names_in_test), row, dtype=float)
-        ax.bar3d(xs - 0.3, ys - 0.3, np.zeros_like(xs, dtype=float), 0.6, 0.6, vals,
-                 color=bar_colors[row], alpha=0.9, shade=True)
-        for xi, v in zip(xs, vals):
-            ax.text(xi, row, v + 150, str(int(v)), ha="center", fontsize=9)
-    ax.set_xticks(range(len(names_in_test)), names_in_test)
-    ax.set_yticks([0, 1], list(counts.keys()))
-    ax.set_zlabel("Number of scans")
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    x = np.arange(len(names_in_test))
+    w = 0.38
+    for k, (label, vals) in enumerate(counts.items()):
+        bars = ax.bar(x + (k - 0.5) * w, vals, w, label=label)
+        ax.bar_label(bars, fontsize=9)
+    ax.set_xticks(x, names_in_test)
+    ax.set_ylabel("Number of scans")
     ax.set_title("Scans per class: train and test")
-    ax.view_init(elev=24, azim=-58)
-    save(fig, "split_3d.png")
+    ax.legend()
+    save(fig, "split_counts.png")
 
     # ---------- 5b. confusion matrix on the TRAINING set (for comparison only) ----------
     train_eval = datasets.ImageFolder(os.path.join(args.data_dir, "train"), transform=make_transforms(img_size, False))
